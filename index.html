@@ -431,19 +431,19 @@
             </div>
             <div class="input-row">
                 <label>Размер заготовки (мм)</label>
-                <input type="number" id="blankSize" value="150" step="any" placeholder="Введите диаметр или размер">
+                <input type="number" id="blankSize" value="10" step="any" placeholder="Введите диаметр или размер">
             </div>
             <div class="result-area" id="petrovichResult">
                 <div class="result-item">
-                    <span class="result-label">Рекомендуемый дорн (√(размер/150)):</span>
+                    <span class="result-label">Рекомендуемый допуск в + (√(размер/150)):</span>
                     <span class="result-value" id="mandrelResult">1.00 мм</span>
                 </div>
                 <div class="result-item">
-                    <span class="result-label">Сумма дорна + размер заготовки:</span>
+                    <span class="result-label">Рекомендуемый размер внутреннего отверстия дорна:</span>
                     <span class="result-value" id="sumResult">151.00 мм</span>
                 </div>
             </div>
-            <div class="info-note">📐 Формула: дорн = √(размер / 150) → округление до сотых; затем прибавляем исходный размер.</div>
+            <div class="info-note">📐 Формула: дорн = размер заготовки + √(размер заготовки / 150)  → округление до сотых;</div>
         </div>
 
         <!-- ПРАКТИЧЕСКИЙ СПРАВОЧНИК ПО ПОДБОРУ МАТРИЦЫ (вместо старого) -->
