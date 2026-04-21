@@ -281,6 +281,38 @@
                 gap: 1.8rem;
             }
         }
+        /* Стили для переключения вкладок справочника */
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        /* Оформление переключателей вкладок справочника */
+        .ref-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.8rem;
+        }
+        .ref-tab {
+            background: #eef3f8;
+            padding: 0.4rem 1rem;
+            border-radius: 2rem;
+            cursor: pointer;
+            font-weight: 600;
+            color: #2c5a74;
+            transition: all 0.2s ease;
+            font-size: 0.85rem;
+        }
+        .ref-tab.active {
+            background: white;
+            color: #166c8c;
+            border-bottom: 2px solid #2c7da0;
+        }
+        /* Плавный поворот стрелки в аккордеоне */
+        .card-header span:last-child {
+            transition: transform 0.2s ease;
+        }
     </style>
 </head>
 <body>
@@ -343,7 +375,7 @@
                 <span style="margin-left: auto;">▼</span>
             </div>
             <div id="refContentDDR" style="display: none; padding-top: 0.5rem;">
-                <div class="ref-tabs" style="display: flex; gap: 0.5rem; margin-bottom: 0.8rem;">
+                <div class="ref-tabs">
                     <div class="ref-tab active" data-tab="tab1">Основные полимеры</div>
                     <div class="ref-tab" data-tab="tab2">Альтернативные данные</div>
                 </div>
