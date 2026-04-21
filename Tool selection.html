@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>Экструзия кабельных оболочек — DDR/DRB + Подбор дорна</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
+            background: linear-gradient(145deg, #f6f9fc 0%, #eef2f5 100%);
+            min-height: 100vh;
+            padding: 1rem;
+            color: #1a2c3e;
+        }
+
+        @import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap');
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Навигация между страницами */
+        .nav-pages {
+            display: flex;
+            gap: 0.8rem;
+            background: #e2ecf2;
+            padding: 0.4rem;
+            border-radius: 3rem;
+            margin-bottom: 1.8rem;
+        }
+        .nav-btn {
+            flex: 1;
+            text-align: center;
+            padding: 0.7rem 0.2rem;
+            border-radius: 2.5rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+            background: transparent;
+            color: #2c5a74;
+            font-size: 0.85rem;
+        }
+        .nav-btn.active {
+            background: white;
+            color: #166c8c;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+        @media (min-width: 600px) {
+            .nav-btn {
+                font-size: 1rem;
+                padding: 0.7rem 0;
+            }
+        }
+
+        .page {
+            display: none;
+        }
+        .page.active-page {
+            display: block;
+        }
+
+        /* Стили карточек, форм, результатов (общие) */
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(2px);
+            border-radius: 1.5rem;
+            box-shadow: 0 12px 24px -12px rgba(0, 0, 0, 0.1);
+            padding: 1.2rem;
+            transition: all 0.2s;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            margin-bottom: 1.5rem;
+        }
+        @media (min-width: 480px) {
+            .card {
+                padding: 1.4rem 1.6rem;
+            }
+        }
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1.2rem;
+            border-bottom: 2px solid #e2edf2;
+            padding-bottom: 0.6rem;
+        }
+        .card-header h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1f5068;
+        }
+        .card-header .icon {
+            font-size: 1.4rem;
+        }
+        .input-row {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            margin-bottom: 1rem;
+        }
+        .input-row label {
+            font-weight: 600;
+            color: #2c5a74;
+            font-size: 0.85rem;
+        }
+        .input-row input {
+            padding: 0.7rem 0.9rem;
+            border: 1.5px solid #dce5ec;
+            border-radius: 1.2rem;
+            font-size: 1rem;
+            font-weight: 500;
+            background: white;
+            transition: all 0.2s;
+            font-family: 'Inter', monospace;
+            width: 100%;
+        }
+        .input-row input:focus {
+            outline: none;
+            border-color: #2c7da0;
+            box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.2);
+        }
+        .result-area {
+            background: linear-gradient(120deg, #f0f7fb, #ffffff);
+            border-radius: 1.2rem;
+            padding: 1rem;
+            margin-top: 0.8rem;
+            border: 1px solid #cde3ed;
+        }
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            padding: 0.6rem 0;
+            border-bottom: 1px dashed #cbdde6;
+            gap: 0.5rem;
+        }
+        .result-item:last-child {
+            border-bottom: none;
+        }
+        .result-label {
+            font-weight: 600;
+            color: #1f4e66;
+            font-size: 0.85rem;
+        }
+        .result-value {
+            font-size: 1.2rem;
+            font-weight: 800;
+            font-family: monospace;
+            color: #0f4b64;
+            background: #e7f0f5;
+            padding: 0.2rem 0.7rem;
+            border-radius: 1.5rem;
+            word-break: break-word;
+            text-align: right;
+        }
+        .info-note {
+            font-size: 0.7rem;
+            color: #6f8ea3;
+            margin-top: 0.8rem;
+            text-align: center;
+        }
+        .error-msg {
+            color: #d14545;
+            background: #ffe8e8;
+            padding: 0.7rem;
+            border-radius: 1rem;
+            font-weight: 500;
+            margin-top: 0.8rem;
+            text-align: center;
+            font-size: 0.85rem;
+        }
+        /* Таблицы с прокруткой */
+        .table-wrapper {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin: 0.5rem 0;
+            border-radius: 1rem;
+        }
+        .ref-table {
+            min-width: 400px;
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.75rem;
+        }
+        @media (min-width: 600px) {
+            .ref-table {
+                font-size: 0.85rem;
+                min-width: 100%;
+            }
+        }
+        .ref-table th, .ref-table td {
+            padding: 0.6rem 0.5rem;
+            text-align: left;
+            border-bottom: 1px solid #cde0e8;
+            vertical-align: top;
+        }
+        .ref-table th {
+            background: #e2edf4;
+            font-weight: 700;
+            color: #1a4d64;
+        }
+        .ref-note {
+            font-size: 0.7rem;
+            margin-top: 0.8rem;
+            color: #5f7f96;
+            background: #eef3f8;
+            padding: 0.6rem;
+            border-radius: 0.8rem;
+        }
+        .toggle-group {
+            display: flex;
+            gap: 0.6rem;
+            background: #eef3f8;
+            padding: 0.3rem;
+            border-radius: 2rem;
+            margin-bottom: 1rem;
+        }
+        .toggle-btn {
+            flex: 1;
+            text-align: center;
+            padding: 0.5rem 0;
+            border-radius: 2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            background: transparent;
+            color: #3a6b88;
+            font-size: 0.8rem;
+        }
+        .toggle-btn.active {
+            background: white;
+            color: #1a5d7a;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+        .mode-switch {
+            display: flex;
+            gap: 0.6rem;
+            background: #e2ecf2;
+            padding: 0.4rem;
+            border-radius: 2.5rem;
+            margin-bottom: 1.2rem;
+        }
+        .mode-option {
+            flex: 1;
+            text-align: center;
+            padding: 0.5rem 0.2rem;
+            border-radius: 2rem;
+            font-weight: 700;
+            cursor: pointer;
+            background: transparent;
+            color: #2c5a74;
+            font-size: 0.75rem;
+        }
+        .mode-option.active {
+            background: white;
+            color: #166c8c;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+        @media (min-width: 480px) {
+            .mode-option {
+                font-size: 0.85rem;
+                padding: 0.6rem 0.2rem;
+            }
+        }
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.2rem;
+        }
+        @media (min-width: 780px) {
+            .dashboard {
+                grid-template-columns: 1fr 1fr;
+                gap: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="hero" style="text-align: center; margin-bottom: 1rem;">
+        <h1 style="font-size: 1.6rem; background: linear-gradient(135deg, #1e4b6e, #2c7da0); background-clip: text; -webkit-background-clip: text; color: transparent;">⚡ Экструзия кабельных оболочек</h1>
+        <p style="color: #4a627a; font-size: 0.85rem;">Два инструмента: вытяжка (DDR/DRB) и подбор дорна по Петровичу</p>
+    </div>
+
+    <!-- Навигация между страницами -->
+    <div class="nav-pages">
+        <div class="nav-btn active" data-page="ddr">📐 Калькулятор инстр. на вытяжку</div>
+        <div class="nav-btn" data-page="petrovich">🔧 Подбор дорна по Петровичу</div>
+    </div>
+
+    <!-- СТРАНИЦА 1: DDR/DRB (без изменений) -->
+    <div id="ddrPage" class="page active-page">
+        <div class="mode-switch" id="modeSwitch">
+            <div class="mode-option" data-mode="ratios">📊 Рассчитать по инструменту из наличия</div>
+            <div class="mode-option" data-mode="tool">🔧 Рассчитать инструмент по теории</div>
+        </div>
+        <div class="dashboard">
+            <div class="card">
+                <div class="card-header">
+                    <span class="icon">📏</span>
+                    <h2>Геометрия оболочки</h2>
+                </div>
+                <div class="input-group">
+                    <div class="toggle-group" id="wallToggleGroup">
+                        <div class="toggle-btn" data-wall="inner">📌 По диаметру заготовки d</div>
+                        <div class="toggle-btn" data-wall="thick">📐 По толщине стенки t</div>
+                    </div>
+                    <div class="input-row" id="dInputRow">
+                        <label id="dLabel">Диаметр заготовки d (мм)</label>
+                        <input type="number" id="dOrT" value="8.0" step="any" placeholder="мм">
+                    </div>
+                    <div class="input-row">
+                        <label>Наружный диаметр D (мм)</label>
+                        <input type="number" id="D" value="10.0" step="any" placeholder="мм">
+                    </div>
+                </div>
+                <div id="modeDynamicFields"></div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <span class="icon">⚙️</span>
+                    <h2 id="resultTitle">Результаты расчёта</h2>
+                </div>
+                <div id="resultContainer" class="result-area">
+                    <div class="result-item"><span class="result-label">✨ ожидание данных...</span></div>
+                </div>
+                <div class="info-note">🔄 Все поля обновляются автоматически • DDR = отношение площадей • DRB ≈ 1 для сбалансированной ориентации</div>
+            </div>
+        </div>
+        <!-- Справочник DDR/DRB (аккордеон) -->
+        <div class="card" style="margin-top: 0.5rem;">
+            <div class="card-header" style="cursor: pointer;" id="refHeaderDDR">
+                <span class="icon">📚</span>
+                <h2>Справочник: типовые значения DDR / DRB</h2>
+                <span style="margin-left: auto;">▼</span>
+            </div>
+            <div id="refContentDDR" style="display: none; padding-top: 0.5rem;">
+                <div class="ref-tabs" style="display: flex; gap: 0.5rem; margin-bottom: 0.8rem;">
+                    <div class="ref-tab active" data-tab="tab1">Основные полимеры</div>
+                    <div class="ref-tab" data-tab="tab2">Альтернативные данные</div>
+                </div>
+                <div id="tab1Content" class="tab-content active">
+                    <div class="table-wrapper">
+                        <table class="ref-table"><thead><tr><th>Полимер</th><th>DDR</th><th>DRB</th><th>Примечание</th></tr></thead><tbody>
+                            <tr><td>ПВХ (PVC)</td><td>1.2–4</td><td>~1</td><td>Общее назначение</td></tr>
+                            <tr><td>PA-6</td><td>6–12</td><td>~1</td><td>Полиамид 6</td></tr>
+                            <tr><td>PA-6,6</td><td>4–15</td><td>~1</td><td>Полиамид 6,6</td></tr>
+                            <tr><td>PA-12</td><td>4–15</td><td>~1</td><td>Полиамид 12</td></tr>
+                            <tr><td>PE</td><td>1.2–4</td><td>~1</td><td>LDPE, MDPE, HDPE</td></tr>
+                            <tr><td>XLPE</td><td>1.3–2</td><td>~1</td><td>Сшитый PE</td></tr>
+                            <tr><td>PEX-B</td><td>4</td><td>~1</td><td>Сшитый полиэтилен B</td></tr>
+                            <tr><td>PP</td><td>4–10</td><td>~1</td><td>Полипропилен</td></tr>
+                            <tr><td>PUR</td><td>2–10</td><td>~1</td><td>Полиуретан</td></tr>
+                            <tr><td>EVOH</td><td>6–18</td><td>~1</td><td>Барьерный слой</td></tr>
+                            <tr><td>PBT</td><td>9–16</td><td>~1</td><td>Полибутилентерефталат</td></tr>
+                            <tr><td>PEEK</td><td>20</td><td>~1</td><td>Высокотемпературный</td></tr>
+                            <tr><td>COP</td><td>80–150</td><td>~1</td><td>Оптические кабели</td></tr>
+                            <tr><td>LSOH</td><td>1–1.5</td><td>~1</td><td>Безгалогенный</td></tr>
+                            <tr><td>TPE</td><td>5–20</td><td>~1</td><td>Термоэластопласт</td></tr>
+                            <tr><td>FEP</td><td>10–150</td><td>~1</td><td>Фторполимер</td></tr>
+                            <tr><td>PFA</td><td>10–250</td><td>~1</td><td>Фторполимер</td></tr>
+                            <tr><td>HYTREL</td><td>10–25</td><td>~1</td><td>Термопласт. эластомер</td></tr>
+                            <tr><td>ETFE</td><td>10–50</td><td>~1</td><td>Фторполимер</td></tr>
+                            <tr><td>PVDF</td><td>9–25</td><td>~1</td><td>Поливинилиденфторид</td></tr>
+                        </tbody></table>
+                    </div>
+                </div>
+                <div id="tab2Content" class="tab-content">
+                    <div class="table-wrapper">
+                        <table class="ref-table"><thead><tr><th>Материал</th><th>DDR</th><th>DRB</th><th>Примечание</th></tr></thead><tbody>
+                            <tr><td>PVC (Flex) — гибкий</td><td>2.0–4.0</td><td>0.95–1.05</td><td>Альтернативный источник</td></tr>
+                            <tr><td>PVC (Semi Rigid)</td><td>1.5–2.5</td><td>0.95–1.01</td><td>Полужесткий</td></tr>
+                            <tr><td>PE</td><td>2.0–5.0</td><td>0.98–1.02</td><td>Альтернативный источник</td></tr>
+                            <tr><td>Nylons (PA)</td><td>4.0–20.0</td><td>0.95–1.05</td><td>Нейлоны</td></tr>
+                            <tr><td>FEP & Teflon’s</td><td>3.0–300.0</td><td>0.95–1.15</td><td>Широкий диапазон DDR</td></tr>
+                            <tr><td>T.P.R.</td><td>2.0–3.0</td><td>0.98–1.01</td><td>Термопластичная резина</td></tr>
+                        </tbody></table>
+                    </div>
+                </div>
+                <div class="ref-note">💡 DRB ≈ 1 — сбалансированная вытяжка. DDR > 1 всегда.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- СТРАНИЦА 2: Подбор дорна по Петровичу (с изменённым справочником и формулой) -->
+    <div id="petrovichPage" class="page">
+        <div class="card">
+            <div class="card-header">
+                <span class="icon">🔧</span>
+                <h2>Расчёт дорна по методике Петровича</h2>
+            </div>
+            <div class="input-row">
+                <label>Размер заготовки (мм)</label>
+                <input type="number" id="blankSize" value="150" step="any" placeholder="Введите диаметр или размер">
+            </div>
+            <div class="result-area" id="petrovichResult">
+                <div class="result-item">
+                    <span class="result-label">Рекомендуемый дорн (√(размер/150)):</span>
+                    <span class="result-value" id="mandrelResult">1.00 мм</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">Сумма дорна + размер заготовки:</span>
+                    <span class="result-value" id="sumResult">151.00 мм</span>
+                </div>
+            </div>
+            <div class="info-note">📐 Формула: дорн = √(размер / 150) → округление до сотых; затем прибавляем исходный размер.</div>
+        </div>
+
+        <!-- ПРАКТИЧЕСКИЙ СПРАВОЧНИК ПО ПОДБОРУ МАТРИЦЫ (вместо старого) -->
+        <div class="card">
+            <div class="card-header" style="cursor: pointer;" id="refHeaderCompress">
+                <span class="icon">📋</span>
+                <h2>Практический справочник: подбор матрицы для оболочки</h2>
+                <span style="margin-left: auto;">▼</span>
+            </div>
+            <div id="refContentCompress" style="display: none; padding-top: 0.5rem;">
+                <div class="table-wrapper">
+                    <table class="ref-table">
+                        <thead>
+                            <tr><th>Материал</th><th>Рекомендуемый диаметр матрицы<br>(относительно наружного диаметра оболочки)</th><th>Примечание</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>ПЭВД (LDPE)</td><td>D<sub>матрицы</sub> = D<sub>оболочки</sub> – (0…0.2) мм</td><td>Склонен к раздуву, матрицу чуть заужают</td></tr>
+                            <tr><td>ПЭНД (HDPE)</td><td>D<sub>матрицы</sub> = D<sub>оболочки</sub> – (0.1…0.3) мм</td><td>Меньшая усадка, требуется небольшая компрессия</td></tr>
+                            <tr><td>ПВХ (PVC)</td><td>D<sub>матрицы</sub> = D<sub>оболочки</sub> ± 0.1 мм</td><td>Практически без зазора, иногда чуть больше</td></tr>
+                            <tr><td>Резина (EPDM, SBR)</td><td>D<sub>матрицы</sub> = D<sub>оболочки</sub> – (0.2…0.5) мм</td><td>Эластичность требует сжатия для плотного облегания</td></tr>
+                            <tr><td>Безгалогенная композиция (LSZH)</td><td>D<sub>матрицы</sub> = D<sub>оболочки</sub> – (0.1…0.2) мм</td><td>Высокая вязкость, небольшое заужение</td></tr>
+                            <tr><td>ТЭП (TPE)</td><td>D<sub>матрицы</sub> = D<sub>оболочки</sub> – (0…0.2) мм</td><td>Зависит от твёрдости, обычно почти в размер</td></tr>
+                            <tr><td>Полиуретан (TPU, PUR)</td><td>D<sub>матрицы</sub> = D<sub>оболочки</sub> + (0.1…0.3) мм</td><td>Склонен к раздуву, может потребоваться зазор</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="ref-note">
+                    💡 <strong>Как пользоваться:</strong> Иногда матрицу нужно подбирать не в размер по оболочке или изоляции, а чуть больше или меньше. Выше приведены ВОЗМОЖНЫЕ рекомендации, вероятно будут скорректированы и дополнены
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ---------- ПЕРЕКЛЮЧЕНИЕ СТРАНИЦ ----------
+    const navBtns = document.querySelectorAll('.nav-btn');
+    const pages = {
+        ddr: document.getElementById('ddrPage'),
+        petrovich: document.getElementById('petrovichPage')
+    };
+    navBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const pageId = btn.getAttribute('data-page');
+            navBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            Object.values(pages).forEach(p => p.classList.remove('active-page'));
+            if (pageId === 'ddr') pages.ddr.classList.add('active-page');
+            else if (pageId === 'petrovich') pages.petrovich.classList.add('active-page');
+        });
+    });
+
+    // ========== СТРАНИЦА DDR/DRB (без изменений) ==========
+    const D_input = document.getElementById('D');
+    const dOrT_input = document.getElementById('dOrT');
+    const dLabel = document.getElementById('dLabel');
+    const modeDynamicDiv = document.getElementById('modeDynamicFields');
+    const resultContainer = document.getElementById('resultContainer');
+    const resultTitle = document.getElementById('resultTitle');
+    
+    let currentMode = 'ratios';
+    let useWallThickness = false;
+    let toolDDR_input, toolDRB_input;
+    let ratiosDm_input, ratiosdm_input;
+
+    const refHeaderDDR = document.getElementById('refHeaderDDR');
+    const refContentDDR = document.getElementById('refContentDDR');
+    refHeaderDDR.addEventListener('click', () => {
+        const isVisible = refContentDDR.style.display === 'block';
+        refContentDDR.style.display = isVisible ? 'none' : 'block';
+        const arrow = refHeaderDDR.querySelector('span:last-child');
+        if(arrow) arrow.style.transform = isVisible ? 'rotate(0deg)' : 'rotate(180deg)';
+    });
+    const ddrTabs = document.querySelectorAll('#refContentDDR .ref-tab');
+    const tab1Content = document.getElementById('tab1Content');
+    const tab2Content = document.getElementById('tab2Content');
+    ddrTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            ddrTabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            if (tab.getAttribute('data-tab') === 'tab1') {
+                tab1Content.classList.add('active');
+                tab2Content.classList.remove('active');
+            } else {
+                tab2Content.classList.add('active');
+                tab1Content.classList.remove('active');
+            }
+        });
+    });
+
+    function getActualD() {
+        let D = parseFloat(D_input.value);
+        return isNaN(D) ? 0 : D;
+    }
+    function getActualDiamOrThick() {
+        let val = parseFloat(dOrT_input.value);
+        return isNaN(val) ? 0 : val;
+    }
+    function getInnerDiameter() {
+        let D = getActualD();
+        let inputVal = getActualDiamOrThick();
+        if (useWallThickness) return D - 2 * inputVal;
+        else return inputVal;
+    }
+    function updateWallInputLabel() {
+        if (useWallThickness) {
+            dLabel.innerText = 'Толщина стенки t (мм)';
+            if (document.activeElement !== dOrT_input) {
+                let D = getActualD();
+                let current_d = getInnerDiameter();
+                if (D > 0 && !isNaN(current_d) && current_d >= 0) {
+                    let new_t = (D - current_d) / 2;
+                    if (!isNaN(new_t) && new_t >= 0) dOrT_input.value = new_t.toFixed(3);
+                }
+            }
+        } else {
+            dLabel.innerText = 'Внутр. диаметр d (мм)';
+            let D = getActualD();
+            let current_t = getActualDiamOrThick();
+            if (D > 0 && !isNaN(current_t) && current_t >= 0 && document.activeElement !== dOrT_input) {
+                let new_d = D - 2 * current_t;
+                if (!isNaN(new_d) && new_d >= 0) dOrT_input.value = new_d.toFixed(3);
+            }
+        }
+        updateAll();
+    }
+    function renderDynamicFields() {
+        if (currentMode === 'tool') {
+            modeDynamicDiv.innerHTML = `
+                <div class="card-header" style="margin-top: 0.2rem;"><span class="icon">🎛️</span><h2>Коэффициенты вытяжки</h2></div>
+                <div class="input-group">
+                    <div class="input-row"><label>DDR (коэф. вытяжки)</label><input type="number" id="toolDDR" value="2.5" step="any"></div>
+                    <div class="input-row"><label>DRB (баланс)</label><input type="number" id="toolDRB" value="1.00" step="any"></div>
+                </div>
+            `;
+            toolDDR_input = document.getElementById('toolDDR');
+            toolDRB_input = document.getElementById('toolDRB');
+            if (toolDDR_input) toolDDR_input.addEventListener('input', () => updateAll());
+            if (toolDRB_input) toolDRB_input.addEventListener('input', () => updateAll());
+        } else {
+            modeDynamicDiv.innerHTML = `
+                <div class="card-header" style="margin-top: 0.2rem;"><span class="icon">🔩</span><h2>Размеры инструмента</h2></div>
+                <div class="input-group">
+                    <div class="input-row"><label>Диаметр по носику дорна dm, мм</label><input type="number" id="ratiosdm" value="11.5" step="any"></div>
+                    <div class="input-row"><label>Диаметр отверстия матрицы Dm, мм</label><input type="number" id="ratiosDm" value="14.0" step="any"></div>
+                </div>
+            `;
+            ratiosdm_input = document.getElementById('ratiosdm');
+            ratiosDm_input = document.getElementById('ratiosDm');
+            if (ratiosdm_input) ratiosdm_input.addEventListener('input', () => updateAll());
+            if (ratiosDm_input) ratiosDm_input.addEventListener('input', () => updateAll());
+        }
+    }
+    function computeTool(D, d, DDR, DRB) {
+        if (D <= 0 || d < 0) throw new Error("Диаметры оболочки должны быть положительными");
+        if (d >= D) throw new Error("Внутренний диаметр d должен быть меньше наружного D");
+        if (DDR <= 0 || DRB <= 0) throw new Error("DDR и DRB должны быть > 0");
+        const denominator = DRB * DRB * D * D - d * d;
+        if (denominator <= 1e-9) throw new Error("Знаменатель формулы отрицателен или ноль. Проверьте DRB, D и d");
+        const Dm2 = (DDR * DRB * DRB * D * D * (D * D - d * d)) / denominator;
+        if (Dm2 <= 0) throw new Error("Расчётный Dm² отрицательный → некорректные коэффициенты");
+        const Dm = Math.sqrt(Dm2);
+        const dm = (Dm * d) / (DRB * D);
+        if (dm <= 0 || dm >= Dm) throw new Error("dm получился нефизичным (dm >= Dm или dm <=0)");
+        return { Dm, dm };
+    }
+    function computeRatios(D, d, Dm, dm) {
+        if (D <= 0 || d < 0 || Dm <= 0 || dm <= 0) throw new Error("Все диаметры должны быть > 0");
+        if (d >= D) throw new Error("Для оболочки d ≥ D недопустимо");
+        if (dm >= Dm) throw new Error("Инструмент: dm ≥ Dm, проверьте размеры");
+        const areaMatrix = (Math.PI / 4) * (Dm * Dm - dm * dm);
+        const areaPipe = (Math.PI / 4) * (D * D - d * d);
+        if (areaPipe <= 0) throw new Error("Площадь сечения оболочки равна нулю");
+        const DDR = areaMatrix / areaPipe;
+        const DRB = (Dm * d) / (dm * D);
+        if (DDR <= 0 || DRB <= 0) throw new Error("Получены отрицательные коэффициенты");
+        return { DDR, DRB };
+    }
+    function updateAll() {
+        try {
+            let D = getActualD();
+            let d = getInnerDiameter();
+            if (isNaN(D) || isNaN(d)) throw new Error("Введите корректные числа для оболочки");
+            if (D <= 0) throw new Error("Наружный диаметр должен быть > 0");
+            if (d < 0) throw new Error("Внутренний диаметр не может быть отрицательным");
+            if (d >= D) throw new Error("Внутренний диаметр оболочки должен быть меньше наружного");
+            if (currentMode === 'tool') {
+                let DDR = parseFloat(toolDDR_input?.value);
+                let DRB = parseFloat(toolDRB_input?.value);
+                if (isNaN(DDR) || isNaN(DRB)) throw new Error("Задайте DDR и DRB");
+                const { Dm, dm } = computeTool(D, d, DDR, DRB);
+                resultTitle.innerText = "🔧 Размеры экструзионного инструмента";
+                resultContainer.innerHTML = `
+                    <div class="result-item"><span class="result-label">Наружный диаметр матрицы Dm:</span><span class="result-value">${Dm.toFixed(3)} мм</span></div>
+                    <div class="result-item"><span class="result-label">Внутренний диаметр дорна dm:</span><span class="result-value">${dm.toFixed(3)} мм</span></div>
+                    <div class="result-item"><span class="result-label">Толщина стенки инструмента:</span><span class="result-value">${((Dm - dm)/2).toFixed(3)} мм</span></div>
+                    <div class="result-item"><span class="result-label">Проверочный DDR:</span><span class="result-value">${((Dm*Dm - dm*dm)/(D*D - d*d)).toFixed(4)}</span></div>
+                    <div class="result-item"><span class="result-label">Проверочный DRB:</span><span class="result-value">${((Dm * d)/(dm * D)).toFixed(4)}</span></div>
+                `;
+            } else {
+                let dm = parseFloat(ratiosdm_input?.value);
+                let Dm = parseFloat(ratiosDm_input?.value);
+                if (isNaN(dm) || isNaN(Dm)) throw new Error("Укажите dm и Dm инструмента");
+                if (Dm <= 0 || dm <= 0) throw new Error("Диаметры инструмента должны быть > 0");
+                if (dm >= Dm) throw new Error("dm не может быть ≥ Dm");
+                const { DDR, DRB } = computeRatios(D, d, Dm, dm);
+                resultTitle.innerText = "Коэффициенты вытяжки оболочки";
+                resultContainer.innerHTML = `
+                    <div class="result-item"><span class="result-label">DDR (коэффициент вытяжки):</span><span class="result-value">${DDR.toFixed(4)}</span></div>
+                    <div class="result-item"><span class="result-label">DRB (баланс вытяжки):</span><span class="result-value">${DRB.toFixed(4)}</span></div>
+                    <div class="result-item"><span class="result-label">Ориентация материала:</span><span class="result-value">${DRB > 1 ? '▶ продольная > поперечной' : (DRB<1 ? '◀ поперечная преобладает' : '≈ равномерная (оптимум)')}</span></div>
+                `;
+            }
+        } catch (err) {
+            resultTitle.innerText = "⚠️ Ошибка в данных";
+            resultContainer.innerHTML = `<div class="error-msg">❌ ${err.message}</div>`;
+        }
+    }
+    function setMode(mode) {
+        currentMode = mode;
+        renderDynamicFields();
+        updateAll();
+        document.querySelectorAll('.mode-option').forEach(opt => {
+            if (opt.getAttribute('data-mode') === mode) opt.classList.add('active');
+            else opt.classList.remove('active');
+        });
+    }
+    function initDDR() {
+        useWallThickness = false;
+        document.querySelector('.toggle-btn[data-wall="inner"]').classList.add('active');
+        setMode('ratios');
+        D_input.addEventListener('input', () => updateAll());
+        dOrT_input.addEventListener('input', () => updateAll());
+        document.querySelectorAll('#wallToggleGroup .toggle-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const wallMode = btn.getAttribute('data-wall');
+                useWallThickness = (wallMode === 'thick');
+                document.querySelectorAll('#wallToggleGroup .toggle-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                updateWallInputLabel();
+                updateAll();
+            });
+        });
+        document.querySelectorAll('.mode-option').forEach(opt => {
+            opt.addEventListener('click', () => {
+                const mode = opt.getAttribute('data-mode');
+                setMode(mode);
+            });
+        });
+        updateAll();
+    }
+    initDDR();
+
+    // ========== СТРАНИЦА ПЕТРОВИЧА (изменённая формула) ==========
+    const blankSizeInput = document.getElementById('blankSize');
+    const mandrelResultSpan = document.getElementById('mandrelResult');
+    const sumResultSpan = document.getElementById('sumResult');
+    function calculateMandrel() {
+        let val = parseFloat(blankSizeInput.value);
+        if (isNaN(val) || val <= 0) {
+            mandrelResultSpan.innerText = '0.00 мм';
+            sumResultSpan.innerText = '0.00 мм';
+            return;
+        }
+        let step = val / 150;
+        let mandrel = Math.sqrt(step);
+        let sum = mandrel + val;
+        mandrelResultSpan.innerText = mandrel.toFixed(2) + ' мм';
+        sumResultSpan.innerText = sum.toFixed(2) + ' мм';
+    }
+    blankSizeInput.addEventListener('input', calculateMandrel);
+    calculateMandrel();
+
+    // Аккордеон справочника компрессии (новый)
+    const refHeaderCompress = document.getElementById('refHeaderCompress');
+    const refContentCompress = document.getElementById('refContentCompress');
+    refHeaderCompress.addEventListener('click', () => {
+        const isVisible = refContentCompress.style.display === 'block';
+        refContentCompress.style.display = isVisible ? 'none' : 'block';
+        const arrow = refHeaderCompress.querySelector('span:last-child');
+        if(arrow) arrow.style.transform = isVisible ? 'rotate(0deg)' : 'rotate(180deg)';
+    });
+</script>
+</body>
+</html>
